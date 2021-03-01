@@ -4,14 +4,41 @@ const bcrypt = require("bcrypt");
 const userSchema = new Schema(
   {
     /* SCHEMA TO BE BUILT */
+    name: {
+      type: String,
+      required: [true, "Type your Name"],
+    },
+    surname: {
+      type: String,
+      required: [true, "Type your Surname"],
+    },
+    image: String,
+    username: {
+      type: String,
+      required: [true, "Type your Username"],
+      unique: [true, "This username already exists"],
+      minLength: [4, "Username is to short (4 characters minimum)"],
+    },
+    email: {
+      type: String,
+      required: [true, "Type your Email"],
+      unique: [true, "This email already exists"],
+    },
+    password: {
+      type: String,
+      required: [true, "Type your Password"],
+      minLength: [4, "Password is to short (4 characters minimum)"],
+    },
+    following: [{ type: Schema.Types.ObjectId, ref: "users" }],
+    followers: [{ type: Schema.Types.ObjectId, ref: "users" }],
   },
   {
     timestamps: true,
   }
 );
 
-userSchema.statics.findByCredentials = async function (username, password) {
-  const user = await this.findOne({ username });
+userSchema.statics.findByCredentials = async function (email, password) {
+  const user = await this.findOne({ email });
   if (user) {
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) return user;

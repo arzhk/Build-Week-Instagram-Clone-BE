@@ -1,4 +1,5 @@
 const express = require("express");
+const listEndpoints = require("express-list-endpoints");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const services = require("./services");
@@ -33,6 +34,7 @@ server.use(loggerMiddleware);
 
 server.use("/api", services);
 
+console.log(listEndpoints(server));
 server.use(errorMiddleware);
 server.use(errorHandler);
 
