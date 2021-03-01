@@ -1,5 +1,4 @@
 const express = require("express");
-const userSchema = require("./schema");
 const bcrypt = require("bcrypt");
 const { authenticate, verifyJWT } = require("../auth/tools");
 const UserSchema = require("./schema");
