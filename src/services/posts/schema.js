@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 
 const postSchema = new Schema(
   {
-    image: String,
+    img: String,
     caption: String,
     likes: [{ type: Schema.Types.ObjectId, ref: "users" }],
 
