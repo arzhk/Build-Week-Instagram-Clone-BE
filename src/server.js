@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const services = require("./services");
 const cookieParser = require("cookie-parser");
 
-const { errorMiddleware } = require("./errorMiddleware");
+// const { errorMiddleware } = require("./errorMiddleware");
 const { errorHandler } = require("./errorHandling");
 
 const server = express();
@@ -33,7 +33,7 @@ server.use(loggerMiddleware);
 
 server.use("/api", services);
 
-server.use(errorMiddleware);
+// server.use(errorMiddleware);
 server.use(errorHandler);
 
 mongoose

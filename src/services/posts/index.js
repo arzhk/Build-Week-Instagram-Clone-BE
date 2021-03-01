@@ -6,6 +6,13 @@ const multer = require("multer");
 
 const postsRouter = express.Router();
 
+const errorHandler = async (errorText, value, httpStatusCode) => {
+  const err = new Error();
+  err.errors = [{ value: value, msg: errorText }];
+  err.httpStatusCode = httpStatusCode || 400;
+  return err;
+};
+
 postsRouter.post("/", async (req, res, next) => {
   try {
     const newPost = new postModel(req.body);
@@ -29,26 +36,55 @@ postsRouter.get("/", async (req, res, next) => {
 
 postsRouter.delete("/:id", async (req, res, next) => {
   try {
-    const postToDelete = await postModel.findByIdAndDelete(req.params.id);
-    res.status(204).send(postToDelete);
+    const post = await postModel.findById(req.params.id);
+    if (post) {
+      const postToDelete = await postModel.findByIdAndDelete(req.params.id);
+      if (postToDelete) {
+        res.status(204).send("Post has been deleted");
+      } else {
+        next(await errorHandler("", "", 500));
+      }
+    } else {
+      next(
+        await errorHandler(
+          `Post with this id has not been found.`,
+          req.params.id,
+          404
+        )
+      );
+    }
   } catch (error) {
     console.log(error);
-    next(error);
+    next(await errorHandler(error));
   }
 });
 
 postsRouter.put("/:id", async (req, res, next) => {
   try {
-    const postToEdit = await postModel.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { runValidators: true, new: true }
-    );
-
-    res.status(204).send(postToEdit);
+    const post = await postModel.findById(req.params.id);
+    if (post) {
+      const postToEdit = await postModel.findByIdAndUpdate(
+        req.params.id,
+        req.body,
+        { runValidators: true, new: true }
+      );
+      if (postToEdit) {
+        res.status(204).send({ message: "Changes has been added" });
+      } else {
+        next(await errorHandler("", "", 500));
+      }
+    } else {
+      next(
+        await errorHandler(
+          `Post with this id has not been found.`,
+          req.params.id,
+          404
+        )
+      );
+    }
   } catch (error) {
     console.log(error);
-    next(error);
+    next(await errorHandler(error));
   }
 });
 
