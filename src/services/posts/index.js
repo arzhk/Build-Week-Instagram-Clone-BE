@@ -14,6 +14,7 @@ const errorHandler = async (errorText, value, httpStatusCode) => {
   return err;
 };
 
+// ROUTES FOR POSTS
 // CREATES NEW POST
 postsRouter.post("/", authorize, async (req, res, next) => {
   try {
@@ -81,7 +82,7 @@ postsRouter.put("/:id", async (req, res, next) => {
   }
 });
 
-//ADD IMG TO THE POST
+// ADD IMG TO THE POST
 const storage = new CloudinaryStorage({
   cloudinary,
   params: { folder: "instagramPost" },
@@ -107,7 +108,7 @@ postsRouter.post(
   }
 );
 
-//SUB ROUTES
+// SUB ROUTES FOR COMMENTS
 // CREATE COMMENTS
 postsRouter.post("/:id/comments", async (req, res, next) => {
   try {
@@ -178,6 +179,39 @@ postsRouter.put("/:id/comments/:commentId", async (req, res, next) => {
     } else {
       res.status(204).send(result);
     }
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
+//SUB ROUTES FOR LIKES
+//ADD LIKE TO POST
+
+postsRouter.post("/:id/like", async (req, res, next) => {
+  try {
+    const like = req.body;
+    const newLike = await postModel.findByIdAndUpdate(
+      req.params.id,
+      { $push: { likes: like } },
+      { runValidators: true, new: true }
+    );
+    res.status(201).send({ newLike });
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
+//REMOVE LIKE
+postsRouter.delete("/:id/like/:username", async (req, res, next) => {
+  try {
+    const like = await postModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        $pull: { likes: { username: req.params.username } },
+      },
+      { new: true }
+    );
+    res.send({ message: "Like is removed." });
   } catch (error) {
     next(await errorHandler(error));
   }

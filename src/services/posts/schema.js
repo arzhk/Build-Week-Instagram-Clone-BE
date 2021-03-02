@@ -28,6 +28,28 @@ const postSchema = new Schema(
         ),
       },
     ],
+    likes: [
+      {
+        type: new Schema(
+          {
+            username: {
+              type: String,
+              required: true,
+            },
+            userId: {
+              type: String,
+              // required: true,
+            },
+            reaction: {
+              type: Number,
+              required: true,
+              max: 1,
+            },
+          },
+          { timestamps: true }
+        ),
+      },
+    ],
   },
   {
     timestamps: true,

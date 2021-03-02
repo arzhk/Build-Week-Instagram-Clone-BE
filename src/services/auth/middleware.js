@@ -1,5 +1,5 @@
 const { verifyJWT } = require("../");
-const serModel = require("../");
+const userModel = require("../");
 
 const errorHandler = async (errorText, value, httpStatusCode) => {
   const err = new Error();
