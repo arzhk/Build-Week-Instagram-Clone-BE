@@ -137,7 +137,7 @@ usersRouter.get(
     passport.authenticate("google"),
     async (req, res, next) => {
       try {
-        res.cookie("accessToken", token.refreshToken, {
+        res.cookie("token", token.refreshToken, {
           httpOnly: true,
         })
         res.cookie("refreshToken", token.refreshToken, {
