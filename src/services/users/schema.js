@@ -31,6 +31,8 @@ const userSchema = new Schema(
     },
     following: [{ type: Schema.Types.ObjectId, ref: "users" }],
     followers: [{ type: Schema.Types.ObjectId, ref: "users" }],
+    refreshTokens: [{ token: { type: String } }],
+    googleId: String,
   },
   {
     timestamps: true,
