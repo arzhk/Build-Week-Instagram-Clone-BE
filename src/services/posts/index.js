@@ -13,81 +13,74 @@ const errorHandler = async (errorText, value, httpStatusCode) => {
   return err;
 };
 
+// CREATES NEW POST
 postsRouter.post("/", async (req, res, next) => {
   try {
     const newPost = new postModel(req.body);
     await newPost.save();
     res.status(201).send(newPost);
   } catch (error) {
-    console.log(error);
-    next(error);
+    next(await errorHandler(error));
   }
 });
 
+// RETREIVES POSTS
 postsRouter.get("/", async (req, res, next) => {
   try {
-    const posts = await postModel.find();
+    const posts = await postModel.find().populate("user");
     res.status(200).send(posts);
   } catch (error) {
-    console.log(error);
-    next(error);
+    next(await errorHandler(error));
   }
 });
 
+// RETREIVES THE SPESIFIC POST
+postsRouter.get("/:id", async (req, res, next) => {
+  try {
+    const post = await postModel.findById(req.params.id);
+    res.status(200).send(post);
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
+// DELETES THE POST
 postsRouter.delete("/:id", async (req, res, next) => {
   try {
-    const post = await postModel.findById(req.params.id);
-    if (post) {
-      const postToDelete = await postModel.findByIdAndDelete(req.params.id);
-      if (postToDelete) {
-        res.status(204).send("Post has been deleted");
-      } else {
-        next(await errorHandler("", "", 500));
-      }
+    const postToDelete = await postModel.findByIdAndDelete(req.params.id);
+    if (!postToDelete || Object.values(postToDelete).length === 0) {
+      const error = new Error(`There is no post with id ${req.params.id}`);
+      error.httpStatusCode = 404;
+      next(error);
     } else {
-      next(
-        await errorHandler(
-          `Post with this id has not been found.`,
-          req.params.id,
-          404
-        )
-      );
+      res.status(204).send(postToDelete);
     }
   } catch (error) {
-    console.log(error);
     next(await errorHandler(error));
   }
 });
 
+// EDIT POST
 postsRouter.put("/:id", async (req, res, next) => {
   try {
-    const post = await postModel.findById(req.params.id);
-    if (post) {
-      const postToEdit = await postModel.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { runValidators: true, new: true }
-      );
-      if (postToEdit) {
-        res.status(204).send({ message: "Changes has been added" });
-      } else {
-        next(await errorHandler("", "", 500));
-      }
+    const postToUpdate = await postModel.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { runValidators: true, new: true }
+    );
+    if (postToUpdate) {
+      res.status(204).send(postToUpdate);
     } else {
-      next(
-        await errorHandler(
-          `Post with this id has not been found.`,
-          req.params.id,
-          404
-        )
-      );
+      const error = new Error(`Post with id:${req.params.id} not found.`);
+      error.httpStatusCode = 404;
+      next(error);
     }
   } catch (error) {
-    console.log(error);
     next(await errorHandler(error));
   }
 });
 
+//ADD IMG TO THE POST
 const storage = new CloudinaryStorage({
   cloudinary,
   params: { folder: "instagramPost" },
@@ -96,20 +89,19 @@ const storage = new CloudinaryStorage({
 const cloudinaryStorage = multer({ storage: storage });
 
 postsRouter.post(
-  "/:id",
+  "/:id/picture",
   cloudinaryStorage.single("image"),
   async (req, res, next) => {
     try {
       const path = req.file.path;
       let post = await postModel.findByIdAndUpdate(
         req.params.id,
-        { img: path },
-        { new: true }
+        { image: path },
+        { runValidators: true, new: true }
       );
-      res.status(201).send({ post });
+      res.status(201).send({ message: "Post picture is uploaded" });
     } catch (error) {
-      console.log(error);
-      next(error);
+      next(await errorHandler(error));
     }
   }
 );

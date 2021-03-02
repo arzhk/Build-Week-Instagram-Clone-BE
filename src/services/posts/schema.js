@@ -2,14 +2,30 @@ const { Schema, model } = require("mongoose");
 
 const postSchema = new Schema(
   {
-    img: String,
-    caption: String,
-    likes: [{ type: Schema.Types.ObjectId, ref: "users" }],
+    text: {
+      type: String,
+    },
+    username: {
+      type: String,
+    },
+    image: {
+      type: String,
+    },
+    user: { type: Schema.Types.ObjectId, ref: "users" },
 
     comments: [
       {
-        text: String,
-        username: String,
+        type: new Schema(
+          {
+            user: {
+              type: String,
+            },
+            text: {
+              type: String,
+            },
+          },
+          { timestamps: true }
+        ),
       },
     ],
   },
