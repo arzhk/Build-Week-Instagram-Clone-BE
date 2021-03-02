@@ -106,4 +106,80 @@ postsRouter.post(
   }
 );
 
+//SUB ROUTES
+// CREATE COMMENTS
+postsRouter.post("/:id/comments", async (req, res, next) => {
+  try {
+    const comment = req.body;
+    const newComment = await postModel.findByIdAndUpdate(
+      req.params.id,
+      { $push: { comments: comment } },
+      { runValidators: true, new: true }
+    );
+    res.status(201).send({ newComment });
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
+// RETREIVES ALL THE COMMENTS FOR SPECIFIC POST
+postsRouter.get("/:id/comments", async (req, res, next) => {
+  try {
+    const posts = await postModel.findById(req.params.id);
+    res.status(200).send(posts.comments);
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
+// RETREIVES SPECIFIC COMMENT BY ID
+postsRouter.get("/:id/comments/:commentId", async (req, res, next) => {
+  try {
+    const { comments } = await postModel.findById(req.params.id, {
+      comments: { $elemMatch: { _id: req.params.commentId } },
+    });
+    console.log(comments);
+    res.status(200).send(comments[0]);
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
+// DELETES SPECIFIC COMMENT BY ID
+postsRouter.delete("/:id/comments/:commentId", async (req, res, next) => {
+  try {
+    const { comments } = await postModel.findByIdAndUpdate(req.params.id, {
+      comments: { $pull: { _id: req.params.commentId } },
+    });
+    res.status(204).send({ message: "Comment has been deleted." });
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
+// UPDATE SPECIFIC COMMENT BY ID
+postsRouter.put("/:id/comments/:commentId", async (req, res, next) => {
+  let newText = req.body.text;
+
+  try {
+    let result = await postModel.findOneAndUpdate(
+      { _id: req.params.id },
+      {
+        $set: { "comments.$[inner].text": newText },
+      },
+      {
+        arrayFilters: [{ "inner._id": req.params.commentId }],
+        new: true,
+      }
+    );
+    if (!result) {
+      return res.status(404);
+    } else {
+      res.status(204).send(result);
+    }
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
 module.exports = postsRouter;
