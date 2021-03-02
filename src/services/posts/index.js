@@ -3,6 +3,7 @@ const postModel = require("../posts/schema");
 const cloudinary = require("../../cludinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
+const { authorize } = require("../auth/middleware");
 
 const postsRouter = express.Router();
 
@@ -14,7 +15,7 @@ const errorHandler = async (errorText, value, httpStatusCode) => {
 };
 
 // CREATES NEW POST
-postsRouter.post("/", async (req, res, next) => {
+postsRouter.post("/", authorize, async (req, res, next) => {
   try {
     const newPost = new postModel(req.body);
     await newPost.save();
