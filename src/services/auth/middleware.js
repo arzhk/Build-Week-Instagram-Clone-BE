@@ -1,6 +1,7 @@
 const { verifyJWT } = require("./tools");
 const userModel = require("../users/schema");
 
+
 const errorHandler = async (errorText, value, httpStatusCode) => {
   const err = new Error();
   err.errors = [{ value: value, msg: errorText }];
@@ -10,10 +11,9 @@ const errorHandler = async (errorText, value, httpStatusCode) => {
 
 const authorize = async (req, res, next) => {
   try {
-    const token = req.header("Authorization").replace("Bearer ", "");
+    const token = req.cookies.token;
     const decoded = await verifyJWT(token);
-    const user = await userModel.findOne({ _id: decoded.id });
-    next();
+    const user = await userModel.findOne({ _id: decoded._id });
 
     if (!user) {
       throw new Error();

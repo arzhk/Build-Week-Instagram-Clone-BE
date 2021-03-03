@@ -4,6 +4,7 @@ const { authenticate, verifyJWT, refresh } = require("../auth/tools");
 const UserSchema = require("./schema");
 const passport = require("passport");
 require("../auth/oauth");
+const { authorize } = require("../auth/middleware")
 
 
 
@@ -32,24 +33,7 @@ const cloudinaryStorage = multer({ storage: storage });
 const usersRouter = express.Router();
 
 
-usersRouter.post(
-  "/:username",
-  cloudinaryStorage.single("image"),
-  async (req, res, next) => {
-    try {
-      const path = req.file.path;
-      let response = await userSchema.findOneAndUpdate(
-        { username: req.params.username },
-        { img: path },
-        { new: true }
-      );
-      res.status(201).send({ response });
-    } catch (error) {
-      console.log(error);
-      next(error);
-    }
-  }
-);
+
 
 usersRouter.post("/register", async (req, res, next) => {
   try {
@@ -133,13 +117,15 @@ usersRouter.get("/refreshToken", async (req, res, next) => {
   }
 });
 
-usersRouter.get("/me", async (req, res, next) => {
+usersRouter.get("/me", authorize,  async (req, res, next) => {
   try {
+    console.log(req.user, "aaaaaaaaaaaaaaaaaaaaaaaaaaa")
     res.send(req.user);
   } catch (error) {
     next(error);
   }
 });
+
 
 usersRouter.get(
   "/facebook",
@@ -153,6 +139,9 @@ usersRouter.get(
   passport.authenticate("facebook"),
   async (req, res, next) => {
     try {
+
+
+        console.log("user",req.user)
       res.cookie("token", req.user.tokens.token, {
         httpOnly: true,
       });
@@ -168,7 +157,7 @@ usersRouter.get(
   }
 );
 
-usersRouter.get("/logout", async (req, res, next) => {
+usersRouter.get("/logout",authorize, async (req, res, next) => {
   try {
     req.user.refreshTokens = [];
     await req.user.save();
@@ -180,5 +169,24 @@ usersRouter.get("/logout", async (req, res, next) => {
     next(error);
   }
 });
+
+usersRouter.post(
+    "/:username",
+    cloudinaryStorage.single("image"),
+    async (req, res, next) => {
+      try {
+        const path = req.file.path;
+        let response = await userSchema.findOneAndUpdate(
+          { username: req.params.username },
+          { img: path },
+          { new: true }
+        );
+        res.status(201).send({ response });
+      } catch (error) {
+        console.log(error);
+        next(error);
+      }
+    }
+  );
 
 module.exports = usersRouter;
