@@ -1,47 +1,7 @@
 const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy
-const FacebookStrategy = require("passport-facebook").Strategy;
+const FacebookStrategy = require("passport-facebook").Strategy
 const UserModel = require("../users/schema")
 const { authenticate } = require("../auth/tools")
-
-
-
-passport.use(
-    "google",
-    new GoogleStrategy(
-      {
-        clientID: process.env.GOOGLE_ID,
-        clientSecret: process.env.GOOGLE_SECRET,
-        callbackURL: "http://localhost:3000/googleRedirect",
-      },
-      async (request, accessToken, refreshToken, profile, next) => {
-        const newUser = {
-          googleId: profile.id,
-          name: profile.name.givenName,
-          surname: profile.name.familyName,
-          email: profile.emails[0].value,
-          role: "User",
-          refreshTokens: [],
-        }
-  
-        try {
-          const user = await UserModel.findOne({ googleId: profile.id })
-  
-          if (user) {
-            const tokens = await authenticate(user)
-            next(null, { user, tokens })
-          } else {
-            const createdUser = new UserModel(newUser)
-            await createdUser.save()
-            const tokens = await authenticate(createdUser)
-            next(null, { user: createdUser, tokens })
-          }
-        } catch (error) {
-          next(error)
-        }
-      }
-    )
-  )
 
 passport.use(
     "facebook",
@@ -49,41 +9,41 @@ passport.use(
       {
         clientID: process.env.FACEBOOK_ID,
         clientSecret: process.env.FACEBOOK_SECRET,
-        callbackURL: "http://localhost:3003/facebookRedirect",
-        profileFields: [
-          "name",
-          "surname",
-          "image",
-          "username",
-          "email",
-          "followers",
-          "following",
-        ],
+        callbackURL: "http://localhost:3003/api/users/facebookRedirect",
+        profileFields:["id","displayName","photos","email"]
+       
       },
-      async function (accessToken, refreshToken, profile, done) {
+      async function (accessToken, refreshToken, profile, next) {
         console.log(profile);
         try {
           const user = await UserModel.findOne({
             email: profile.emails[0].value,
           });
           if (!user) {
+              const [name,surname] = profile.displayName.split(" ")
             const newUser = {
-              name: profile.name.givenName,
-              surname: profile.name.familyName,
-              image: profile.photos[0].value,
+              name,
+              surname,
+              username: profile.displayName,
               email: profile.emails[0].value,
-              username: profile.username.value,
+              image: profile.photos[0].value,
+              following:[],
+              followers:[],
+              refreshTokens:[],
             };
+            console.log(newUser)
             const createdUser = new UserModel(newUser);
+            console.log(createdUser)
             await createdUser.save();
             const token = await authenticate(createdUser);
-            done(null, { user: createdUser, token });
+            next(null, { user: createdUser, token });
           } else {
             const tokens = await authenticate(user);
-            done(null, { user, tokens });
+            next(null, { user, tokens });
           }
         } catch (error) {
-          done(error);
+            console.log(error)
+          next(error);
         }
       }
     )

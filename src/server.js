@@ -3,7 +3,9 @@ const listEndpoints = require("express-list-endpoints");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const services = require("./services");
+const passport = require("passport")
 const cookieParser = require("cookie-parser");
+const oauth = require("./services/auth/oauth")
 
 // const { errorMiddleware } = require("./errorMiddleware");
 const { errorHandler } = require("./errorHandling");
@@ -30,6 +32,7 @@ const corsOptions = {
 server.use(cors(corsOptions));
 server.use(express.json());
 server.use(cookieParser());
+server.use(passport.initialize())
 server.use(loggerMiddleware);
 
 server.use("/api", services);

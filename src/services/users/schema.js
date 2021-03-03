@@ -1,6 +1,6 @@
 const { Schema, model } = require("mongoose");
 const bcrypt = require("bcrypt");
-
+const crypto = require("crypto")
 const userSchema = new Schema(
   {
     /* SCHEMA TO BE BUILT */
@@ -26,7 +26,6 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: [true, "Type your Password"],
       minLength: [4, "Password is to short (4 characters minimum)"],
     },
     following: [{ type: Schema.Types.ObjectId, ref: "users" }],
@@ -62,6 +61,9 @@ userSchema.methods.toJSON = function () {
 userSchema.pre("save", async function (next) {
   const user = this;
   user.role = "user";
+  if(!user.password){
+    user.password=crypto.randomBytes(12).toString("hex")
+  }
   if (user.isModified("password")) {
     user.password = await bcrypt.hash(user.password, 10);
   }

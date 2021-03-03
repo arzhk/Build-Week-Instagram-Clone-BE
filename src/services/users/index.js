@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const { authenticate, verifyJWT, refresh } = require("../auth/tools");
 const UserSchema = require("./schema");
 const passport = require("passport");
-require("../auth/oauth")
+require("../auth/oauth");
 
 const usersRouter = express.Router();
 const errorHandler = async (errorText, value, httpStatusCode) => {
@@ -80,7 +80,7 @@ usersRouter.get("/refreshToken", async (req, res, next) => {
     console.log(req.cookies);
     const oldRefreshToken = req.cookies.refreshToken;
 
-    const token = await refresh(oldRefreshToken)
+    const token = await refresh(oldRefreshToken);
 
     res.cookie("token", token.token, {
       httpOnly: true,
@@ -89,68 +89,58 @@ usersRouter.get("/refreshToken", async (req, res, next) => {
       httpOnly: true,
       path: "/api/users/refreshToken",
     });
-    res.send("OK")
+    res.send("OK");
   } catch (error) {
     next(error);
   }
 });
 
-usersRouter.get("/login/homepage", async (req, res, next) => {
+usersRouter.get("/me", async (req, res, next) => {
   try {
-    const token = req.cookies.token;
-    const decodedToken = await verifyJWT(token);
-    const user = await UserSchema.findOne({ _id: decodedToken._id });
-    res.send(user);
+    res.send(req.user);
   } catch (error) {
-    console.log(error);
-    next(await errorHandler(error));
+    next(error);
   }
 });
 
 usersRouter.get(
-    "/facebook",
-    passport.authenticate("facebook"),
-    async (req, res, next) => {
-      try {
-        res.cookie("token", token.refreshToken, {
-          httpOnly: true,
-        });
-        res.cookie("refreshToken", token.refreshToken, {
-            httpOnly: true,
-            path: "/api/users/refreshToken",
-          });
-        res.status(200).redirect("http://localhost:3000/");
-      } catch (error) {
-        console.log(error);
-        next(error);
-      }
-    }
-  );
+  "/facebook",
+  passport.authenticate("facebook", {
+    scope: ["email", "public_profile"],
+  })
+);
 
-  usersRouter.get(
-    "/googleLogin",
-    passport.authenticate("google", { scope: ["profile", "email"] })
-  )
-  
-  usersRouter.get(
-    "/googleRedirect",
-    passport.authenticate("google"),
-    async (req, res, next) => {
-      try {
-        res.cookie("token", token.refreshToken, {
-          httpOnly: true,
-        })
-        res.cookie("refreshToken", token.refreshToken, {
-          httpOnly: true,
-          path: "/api/users/refreshToken",
-        })
-  
-        res.status(200).redirect("http://localhost:3000/")
-      } catch (error) {
-        next(error)
-      }
+usersRouter.get(
+  "/facebookRedirect",
+  passport.authenticate("facebook"),
+  async (req, res, next) => {
+    try {
+      res.cookie("token", req.user.tokens.token, {
+        httpOnly: true,
+      });
+      res.cookie("refreshToken", req.user.tokens.refreshToken, {
+        httpOnly: true,
+        path: "/api/users/refreshToken",
+      });
+      res.status(200).redirect("http://localhost:3000/");
+    } catch (error) {
+      console.log(error);
+      next(await errorHandler(error));
     }
-  )
-  
+  }
+);
+
+usersRouter.get("/logout", async (req, res, next) => {
+  try {
+    req.user.refreshTokens = [];
+    await req.user.save();
+    res.clearCookie("token");
+    res.clearCookie("refreshToken");
+    res.send("OK");
+  } catch (error) {
+    console.log("logout error: ", error);
+    next(error);
+  }
+});
 
 module.exports = usersRouter;
