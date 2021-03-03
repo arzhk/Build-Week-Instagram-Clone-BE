@@ -11,7 +11,6 @@ passport.use(
         clientSecret: process.env.FACEBOOK_SECRET,
         callbackURL: "http://localhost:3003/api/users/facebookRedirect",
         profileFields:["id","displayName","photos","email"]
-       
       },
       async function (accessToken, refreshToken, profile, next) {
         console.log(profile);
