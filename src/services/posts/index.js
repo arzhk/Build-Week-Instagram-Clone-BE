@@ -199,7 +199,7 @@ postsRouter.post("/:postId/like/:userId", async (req, res, next) => {
       const deleteLike = await postModel.findByIdAndUpdate(req.params.postId, {
         $pull: { likes: req.params.userId },
       });
-      res.status(203).send(deleteLike);
+      res.status(204).send(deleteLike);
     } else {
       const newLike = await postModel.findByIdAndUpdate(req.params.postId, {
         $addToSet: { likes: req.params.userId },
