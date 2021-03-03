@@ -4,6 +4,7 @@ const cloudinary = require("../../cludinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
 const { authorize } = require("../auth/middleware");
+const mongoose = require("mongoose");
 
 const postsRouter = express.Router();
 
@@ -187,32 +188,27 @@ postsRouter.put("/:id/comments/:commentId", async (req, res, next) => {
 //SUB ROUTES FOR LIKES
 //ADD LIKE TO POST
 
-postsRouter.post("/:id/like", async (req, res, next) => {
+postsRouter.post("/:postId/like/:userId", async (req, res, next) => {
   try {
-    const like = req.body;
-    const newLike = await postModel.findByIdAndUpdate(
-      req.params.id,
-      { $push: { likes: like } },
-      { runValidators: true, new: true }
-    );
-    res.status(201).send({ newLike });
-  } catch (error) {
-    next(await errorHandler(error));
-  }
-});
+    const lookingForLike = await postModel.findOne({
+      _id: req.params.postId,
+      likes: req.params.userId,
+    });
+    console.log(lookingForLike);
+    if (lookingForLike) {
+      const deleteLike = await postModel.findByIdAndUpdate(req.params.postId, {
+        $pull: { likes: req.params.userId },
+      });
+      res.status(204).send(deleteLike);
+    } else {
+      const newLike = await postModel.findByIdAndUpdate(req.params.postId, {
+        $addToSet: { likes: req.params.userId },
+      });
 
-//REMOVE LIKE
-postsRouter.delete("/:id/like/:username", async (req, res, next) => {
-  try {
-    const like = await postModel.findByIdAndUpdate(
-      req.params.id,
-      {
-        $pull: { likes: { username: req.params.username } },
-      },
-      { new: true }
-    );
-    res.send({ message: "Like is removed." });
+      res.status(200).send(newLike);
+    }
   } catch (error) {
+    console.log(error);
     next(await errorHandler(error));
   }
 });
