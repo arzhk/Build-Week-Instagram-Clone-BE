@@ -187,16 +187,37 @@ postsRouter.put("/:id/comments/:commentId", async (req, res, next) => {
 //SUB ROUTES FOR LIKES
 //ADD LIKE TO POST
 
-postsRouter.post("/:id/like", async (req, res, next) => {
+postsRouter.post("/:postId/like/:userId", async (req, res, next) => {
   try {
-    const like = req.body;
-    const newLike = await postModel.findByIdAndUpdate(
-      req.params.id,
-      { $push: { likes: like } },
-      { runValidators: true, new: true }
-    );
-    res.status(201).send({ newLike });
+    const post = await postModel.findByIdAndUpdate(req.params.postId); // looking fot post
+    if (post.likes.find((like) => like.userId === req.params.userId)) {
+      // checks if in this post there is already like
+      await postModel.findByIdAndUpdate(
+        req.params.postId,
+        {
+          $pull: { likes: { userId: req.params.userId } }, // removes userId
+        },
+        { safe: true, upsert: true }
+      );
+    } else {
+      await postModel.findByIdAndUpdate(
+        req.params.postId,
+        {
+          $push: { likes: { userId: req.params.userId } }, // otherwise push userId
+        },
+        { safe: true, upsert: true }
+      );
+    }
+    res.send("ok");
+    // const like = req.body;
+    // const newLike = await postModel.findByIdAndUpdate(
+    //   req.params.id,
+    //   { $push: { likes: like } },
+    //   { runValidators: true, new: true }
+    // );
+    // res.status(201).send({ newLike });
   } catch (error) {
+    console.log(error);
     next(await errorHandler(error));
   }
 });

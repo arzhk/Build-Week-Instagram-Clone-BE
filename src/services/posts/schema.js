@@ -28,28 +28,7 @@ const postSchema = new Schema(
         ),
       },
     ],
-    likes: [
-      {
-        type: new Schema(
-          {
-            username: {
-              type: String,
-              required: true,
-            },
-            userId: {
-              type: String,
-              // required: true,
-            },
-            reaction: {
-              type: Number,
-              required: true,
-              max: 1,
-            },
-          },
-          { timestamps: true }
-        ),
-      },
-    ],
+    likes: [{ type: new Schema({ userId: String }) }, { timestamps: true }],
   },
   {
     timestamps: true,
