@@ -31,11 +31,11 @@ passport.use(
               refreshTokens:[],
             };
             console.log(newUser)
-            const createdUser = new UserModel(newUser);
+            let createdUser = new UserModel(newUser);
             console.log(createdUser)
-            await createdUser.save();
-            const token = await authenticate(createdUser);
-            next(null, { user: createdUser, token });
+            createdUser=await createdUser.save();
+            const tokens = await authenticate(createdUser);
+            next(null, { user: createdUser, tokens });
           } else {
             const tokens = await authenticate(user);
             next(null, { user, tokens });

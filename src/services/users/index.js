@@ -139,6 +139,9 @@ usersRouter.get(
   passport.authenticate("facebook"),
   async (req, res, next) => {
     try {
+
+
+        console.log("user",req.user)
       res.cookie("token", req.user.tokens.token, {
         httpOnly: true,
       });
