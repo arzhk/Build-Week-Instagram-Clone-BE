@@ -1,5 +1,5 @@
-const { verifyJWT } = require("../");
-const userModel = require("../");
+const { verifyJWT } = require("./tools");
+const userModel = require("../users/schema");
 
 const errorHandler = async (errorText, value, httpStatusCode) => {
   const err = new Error();

@@ -28,7 +28,7 @@ const postSchema = new Schema(
         ),
       },
     ],
-    likes: [{ type: new Schema({ userId: String }) }, { timestamps: true }],
+    likes: [{ type: Schema.Types.ObjectId, ref: "users" }],
   },
   {
     timestamps: true,

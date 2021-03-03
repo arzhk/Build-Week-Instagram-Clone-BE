@@ -4,6 +4,7 @@ const cloudinary = require("../../cludinary");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
 const { authorize } = require("../auth/middleware");
+const mongoose = require("mongoose");
 
 const postsRouter = express.Router();
 
@@ -189,26 +190,23 @@ postsRouter.put("/:id/comments/:commentId", async (req, res, next) => {
 
 postsRouter.post("/:postId/like/:userId", async (req, res, next) => {
   try {
-    const post = await postModel.findByIdAndUpdate(req.params.postId); // looking fot post
-    if (post.likes.find((like) => like.userId === req.params.userId)) {
-      // checks if in this post there is already like
-      await postModel.findByIdAndUpdate(
-        req.params.postId,
-        {
-          $pull: { likes: { userId: req.params.userId } }, // removes userId
-        },
-        { safe: true, upsert: true }
-      );
+    const lookingForLike = await postModel.findOne({
+      _id: req.params.postId,
+      likes: req.params.userId,
+    });
+    console.log(lookingForLike);
+    if (lookingForLike) {
+      const deleteLike = await postModel.findByIdAndUpdate(req.params.postId, {
+        $pull: { likes: req.params.userId },
+      });
+      res.status(203).send(deleteLike);
     } else {
-      await postModel.findByIdAndUpdate(
-        req.params.postId,
-        {
-          $push: { likes: { userId: req.params.userId } }, // otherwise push userId
-        },
-        { safe: true, upsert: true }
-      );
+      const newLike = await postModel.findByIdAndUpdate(req.params.postId, {
+        $addToSet: { likes: req.params.userId },
+      });
+
+      res.status(200).send(newLike);
     }
-    res.send("Post has been liked or unliked");
   } catch (error) {
     console.log(error);
     next(await errorHandler(error));
