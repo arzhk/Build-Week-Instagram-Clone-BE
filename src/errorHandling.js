@@ -1,4 +1,5 @@
 const errorHandler = async (err, req, res, next) => {
+  console.log(err)
   let error = await errorProcessor(err);
   res.send(error);
 };
