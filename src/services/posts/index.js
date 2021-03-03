@@ -208,32 +208,9 @@ postsRouter.post("/:postId/like/:userId", async (req, res, next) => {
         { safe: true, upsert: true }
       );
     }
-    res.send("ok");
-    // const like = req.body;
-    // const newLike = await postModel.findByIdAndUpdate(
-    //   req.params.id,
-    //   { $push: { likes: like } },
-    //   { runValidators: true, new: true }
-    // );
-    // res.status(201).send({ newLike });
+    res.send("Post has been liked or unliked");
   } catch (error) {
     console.log(error);
-    next(await errorHandler(error));
-  }
-});
-
-//REMOVE LIKE
-postsRouter.delete("/:id/like/:username", async (req, res, next) => {
-  try {
-    const like = await postModel.findByIdAndUpdate(
-      req.params.id,
-      {
-        $pull: { likes: { username: req.params.username } },
-      },
-      { new: true }
-    );
-    res.send({ message: "Like is removed." });
-  } catch (error) {
     next(await errorHandler(error));
   }
 });
