@@ -37,6 +37,8 @@ server.use(loggerMiddleware);
 
 server.use("/api", services);
 
+
+
 console.log(listEndpoints(server));
 // server.use(errorMiddleware);
 server.use(errorHandler);

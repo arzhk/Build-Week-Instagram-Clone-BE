@@ -5,13 +5,51 @@ const UserSchema = require("./schema");
 const passport = require("passport");
 require("../auth/oauth");
 
-const usersRouter = express.Router();
+
+
+const cloudinary = require("../../cludinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const multer = require("multer");
+
 const errorHandler = async (errorText, value, httpStatusCode) => {
   const err = new Error();
   err.errors = [{ value: value, msg: errorText }];
   err.httpStatusCode = httpStatusCode || 400;
   return err;
 };
+
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "instagramProfile",
+  },
+});
+
+const cloudinaryStorage = multer({ storage: storage });
+
+
+const usersRouter = express.Router();
+
+
+usersRouter.post(
+  "/:username",
+  cloudinaryStorage.single("image"),
+  async (req, res, next) => {
+    try {
+      const path = req.file.path;
+      let response = await userSchema.findOneAndUpdate(
+        { username: req.params.username },
+        { img: path },
+        { new: true }
+      );
+      res.status(201).send({ response });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
 
 usersRouter.post("/register", async (req, res, next) => {
   try {
