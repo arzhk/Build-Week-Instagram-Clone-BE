@@ -3,14 +3,18 @@ const listEndpoints = require("express-list-endpoints");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const services = require("./services");
-const passport = require("passport")
+const passport = require("passport");
 const cookieParser = require("cookie-parser");
-const oauth = require("./services/auth/oauth")
+const oauth = require("./services/auth/oauth");
+const createSocketServer = require("./socket");
+const http = require("http");
 
 // const { errorMiddleware } = require("./errorMiddleware");
 const { errorHandler } = require("./errorHandling");
 
 const server = express();
+const httpServer = http.createServer(server);
+createSocketServer(httpServer);
 const port = process.env.PORT || 3001;
 
 const loggerMiddleware = (req, res, next) => {
@@ -32,12 +36,10 @@ const corsOptions = {
 server.use(cors(corsOptions));
 server.use(express.json());
 server.use(cookieParser());
-server.use(passport.initialize())
+server.use(passport.initialize());
 server.use(loggerMiddleware);
 
 server.use("/api", services);
-
-
 
 console.log(listEndpoints(server));
 // server.use(errorMiddleware);
@@ -51,7 +53,7 @@ mongoose
     useFindAndModify: false,
   })
   .then(
-    server.listen(port, () => {
+    httpServer.listen(port, () => {
       console.log("Server is running on port: ", port);
     })
   );
