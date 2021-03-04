@@ -1,6 +1,7 @@
 const { Schema, model } = require("mongoose");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const validator = require("validator");
 const userSchema = new Schema(
   {
     /* SCHEMA TO BE BUILT */
@@ -26,6 +27,7 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Type your Email"],
       unique: [true, "This email already exists"],
+      validate: [validator.isEmail, "Please enter valid email"],
     },
     password: {
       type: String,

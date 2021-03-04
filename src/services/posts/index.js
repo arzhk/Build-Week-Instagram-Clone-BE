@@ -18,9 +18,9 @@ const errorHandler = async (errorText, value, httpStatusCode) => {
 
 // ROUTES FOR POSTS
 // CREATES NEW POST
-postsRouter.post("/", async (req, res, next) => {
+postsRouter.post("/", authorize, async (req, res, next) => {
   try {
-    const newPost = new PostSchema(req.body);
+    const newPost = new postModel(req.body);
     await newPost.save();
     res.status(201).send(newPost);
   } catch (error) {
