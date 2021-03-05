@@ -115,6 +115,16 @@ usersRouter.get("/me", authorize, async (req, res, next) => {
   }
 });
 
+usersRouter.put("/updateInfo", authorize, async (req, res, next) => {
+  try {
+    const user = await UserSchema.findOneAndUpdate({ _id: req.user._id }, { ...req.body });
+    res.send(user);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
 usersRouter.get("/suggestions", authorize, async (req, res, next) => {
   try {
     const randomUsers = (await UserSchema.aggregate([{ $sample: { size: 5 } }])).filter(

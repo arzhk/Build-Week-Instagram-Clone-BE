@@ -20,7 +20,7 @@ const errorHandler = async (errorText, value, httpStatusCode) => {
 // CREATES NEW POST
 postsRouter.post("/", authorize, async (req, res, next) => {
   try {
-    const newPost = new postModel(req.body);
+    const newPost = new PostSchema(req.body);
     await newPost.save();
     res.status(201).send(newPost);
   } catch (error) {
@@ -54,8 +54,17 @@ postsRouter.get("/following", authorize, async (req, res, next) => {
 
     posts_following.forEach((post) => test.push({ ...post }));
  */
-    console.log(posts_following);
     res.status(200).send(posts_following);
+  } catch (error) {
+    next(await errorHandler(error));
+  }
+});
+
+postsRouter.get("/me", authorize, async (req, res, next) => {
+  try {
+    const posts = await PostSchema.find().populate("user");
+    const posts_me = posts.filter((post) => post.username === req.user.username);
+    res.status(200).send(posts_me.reverse());
   } catch (error) {
     next(await errorHandler(error));
   }
@@ -88,35 +97,38 @@ postsRouter.get("/:id", async (req, res, next) => {
 });
 
 // DELETES THE POST
-postsRouter.delete("/:id", async (req, res, next) => {
+postsRouter.delete("/:id", authorize, async (req, res, next) => {
   try {
+    console.log("aaaadasdsa");
     const postToDelete = await PostSchema.findByIdAndDelete(req.params.id);
     if (!postToDelete || Object.values(postToDelete).length === 0) {
       const error = new Error(`There is no post with id ${req.params.id}`);
       error.httpStatusCode = 404;
       next(error);
-    } else {
-      res.status(204).send(postToDelete);
     }
+    res.status(204).send({ msg: "Successfully Deleted Post" });
   } catch (error) {
     next(await errorHandler(error));
   }
 });
 
 // EDIT POST
-postsRouter.put("/:id", async (req, res, next) => {
+postsRouter.put("/:id", authorize, async (req, res, next) => {
   try {
-    const postToUpdate = await PostSchema.findByIdAndUpdate(req.params.id, req.body, {
-      runValidators: true,
-      new: true,
-    });
-    if (postToUpdate) {
-      res.status(204).send(postToUpdate);
-    } else {
+    const postToUpdate = await PostSchema.findOneAndUpdate(
+      { _id: req.params.id },
+      { ...req.body },
+      {
+        runValidators: true,
+        new: true,
+      }
+    );
+    if (!postToUpdate) {
       const error = new Error(`Post with id:${req.params.id} not found.`);
       error.httpStatusCode = 404;
       next(error);
     }
+    res.status(200).send(postToUpdate);
   } catch (error) {
     next(await errorHandler(error));
   }
@@ -130,11 +142,12 @@ const storage = new CloudinaryStorage({
 
 const cloudinaryStorage = multer({ storage: storage });
 
-postsRouter.post("/:id/picture", cloudinaryStorage.single("image"), async (req, res, next) => {
+postsRouter.post("/picture", cloudinaryStorage.single("image"), async (req, res, next) => {
   try {
     const path = req.file.path;
-    await PostSchema.findByIdAndUpdate(req.params.id, { image: path }, { runValidators: true, new: true });
-    res.status(201).send({ message: "Post picture is uploaded" });
+    /*  await PostSchema.findByIdAndUpdate(req.params.id, { image: path }, { runValidators: true, new: true }); */
+    console.log(path);
+    res.status(201).send({ path });
   } catch (error) {
     next(await errorHandler(error));
   }
@@ -142,7 +155,7 @@ postsRouter.post("/:id/picture", cloudinaryStorage.single("image"), async (req, 
 
 // SUB ROUTES FOR COMMENTS
 // CREATE COMMENTS
-postsRouter.post("/:id/comments", async (req, res, next) => {
+postsRouter.post("/:id/comments", authorize, async (req, res, next) => {
   try {
     const comment = req.body;
     const newComment = await PostSchema.findByIdAndUpdate(
@@ -218,26 +231,24 @@ postsRouter.put("/:id/comments/:commentId", async (req, res, next) => {
 //SUB ROUTES FOR LIKES
 //ADD LIKE TO POST
 
-postsRouter.post("/:postId/like/:userId", async (req, res, next) => {
+postsRouter.post("/:postId/like/:userId", authorize, async (req, res, next) => {
   try {
     const lookingForLike = await PostSchema.findOne({
       _id: req.params.postId,
       likes: req.params.userId,
     });
     if (lookingForLike) {
-      const deleteLike = await PostSchema.findByIdAndUpdate(req.params.postId, {
+      await PostSchema.findByIdAndUpdate(req.params.postId, {
         $pull: { likes: req.params.userId },
       });
-      res.status(204).send(deleteLike);
+      res.status(204).send("Removed Like");
     } else {
-      const newLike = await PostSchema.findByIdAndUpdate(req.params.postId, {
+      await PostSchema.findByIdAndUpdate(req.params.postId, {
         $addToSet: { likes: req.params.userId },
       });
-
-      res.status(200).send(newLike);
+      res.status(200).send("Added Like");
     }
   } catch (error) {
-    console.log(error);
     next(await errorHandler(error));
   }
 });
