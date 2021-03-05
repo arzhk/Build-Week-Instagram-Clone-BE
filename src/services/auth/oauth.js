@@ -11,7 +11,6 @@ passport.use(
         clientSecret: process.env.FACEBOOK_SECRET,
         callbackURL: "http://localhost:3003/api/users/facebookRedirect",
         profileFields:["id","displayName","photos","email"]
-       
       },
       async function (accessToken, refreshToken, profile, next) {
         console.log(profile);
@@ -32,11 +31,11 @@ passport.use(
               refreshTokens:[],
             };
             console.log(newUser)
-            const createdUser = new UserModel(newUser);
+            let createdUser = new UserModel(newUser);
             console.log(createdUser)
-            await createdUser.save();
-            const token = await authenticate(createdUser);
-            next(null, { user: createdUser, token });
+            createdUser=await createdUser.save();
+            const tokens = await authenticate(createdUser);
+            next(null, { user: createdUser, tokens });
           } else {
             const tokens = await authenticate(user);
             next(null, { user, tokens });
