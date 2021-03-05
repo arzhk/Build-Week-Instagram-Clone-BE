@@ -1,6 +1,14 @@
 const socketio = require("socket.io");
-const RoomModel = require("../src/services/chat/shemas/roomschema");
-const MessageModel = require("../src/services/chat/shemas/messagesschema");
+const {
+  createConversation,
+  createMessage,
+  deleteMessage,
+  addParticipantToConvo,
+  removeParticipantFromConvo,
+  getUsersInConvo,
+  getAllConvoByUserId,
+  likeMessage,
+} = require("./services/chat/util/socket");
 
 const errorHandler = async (errorText, value, httpStatusCode) => {
   const err = new Error();
@@ -9,29 +17,113 @@ const errorHandler = async (errorText, value, httpStatusCode) => {
   return err;
 };
 
-// 1) CREATE CHAT ROOM BETWEEN TWO USERS
-// 2) CREATE MESSAGE
-// 3) ADD USERS TO CHATROOM
-// 4)
-
 const createSocketServer = (server) => {
   const io = socketio(server);
-  //LISTENING OF EVENTS
   io.on("connection", (socket) => {
-    console.log(`Socket connection has this socket id: ${socket.id}`);
+    console.log(`New socket connection --> ${socket.id}`);
+    //join all convo id that the user belong to
+    socket.on("userConnected", async ({ userId }) => {
+      socket.userId = userId;
+      let convos = await getAllConvoByUserId(userId);
+      console.log(convos);
+      convos.forEach((convo) => {
+        socket.join(convo._id);
+        socket.broadcast
+          .to(convo._id)
+          .emit("online", { message: `${userId} is online` });
+      });
+    });
+    //start conversation
+    socket.on(
+      "createConvo",
+      async ({ currentUserId, participants, oneDay }) => {
+        try {
+          const newConvo = await createConversation({
+            currentUserId,
+            participants,
+            oneDay,
+          });
+          socket.join(newConvo._id);
+          // participants.forEach((participant) => {
+          //   // sockets[participant].join(room);
+          // });
 
-    socket.on("joinRoom", async () => {
+          console.log(newConvo);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    );
+
+    socket.on("addUserToConvo", async ({ convoId, userId }) => {
       try {
-        //add users to spesific room (in mongo)
-        await addUserToRoom();
-
-        socket.join();
+        const addUser = await addParticipantToConvo(userId, convoId);
+        socket.join(convoId);
+        let message = { message: `${userId} has joined the room` };
+        socket.broadcast.to(convoId).emit("sendMessage", message);
+        console.log(addUser);
       } catch (error) {
-        next(await errorHandler(error));
+        console.log(error);
       }
     });
 
-    socket.on("message", () => {});
+    //send message
+    socket.on("sendMessage", async ({ convoId, sender, url, content, to }) => {
+      try {
+        const newMessage = await createMessage({
+          convoId,
+          sender,
+          url,
+          content,
+          to,
+        });
+        socket.broadcast.to(convoId).emit("sendMessage", newMessage);
+        console.log(newMessage);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    //leave room
+    socket.on("leaveRoom", async ({ convoId, userId, participant }) => {
+      try {
+        const removeUser = await removeParticipantFromConvo(
+          convoId,
+          userId,
+          participant
+        );
+        console.log(removeUser);
+        if (!removeUser.error) {
+          socket.broadcast
+            .to(convoId)
+            .emit("sendMessage", { msg: `${participant} removed/left` });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    //delete message
+    socket.on("deleteMessage", async ({ convoId, msgId, userId }) => {
+      try {
+        const deletedMessage = await deleteMessage(msgId, userId);
+        console.log(deletedMessage);
+        socket.broadcast
+          .to(convoId)
+          .emit("sendMessage", { msg: `${msgId} removed` });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    socket.on("likeMessage", async ({ msgId, userId }) => {
+      try {
+        const likedMessage = await likeMessage(msgId, userId);
+        console.log(likedMessage);
+      } catch (error) {
+        console.log(error);
+      }
+    });
   });
 };
 
