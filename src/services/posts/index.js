@@ -78,7 +78,6 @@ postsRouter.get("/me", authorize, async (req, res, next) => {
       { $match: { "authorOfPost.0.followers": mongoose.Types.ObjectId(req.user._id) } },
       { $project: { text: 1, user: 1, location: 1, username: 1, image: 1, comments: 1, likesOfPost: 1 } },
     ]);
-
     res.status(200).send(posts);
   } catch (error) {
     console.log(error);

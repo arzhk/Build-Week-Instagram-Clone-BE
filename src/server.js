@@ -18,7 +18,7 @@ const loggerMiddleware = (req, res, next) => {
   next();
 };
 
-const whitelist = ["http://localhost:3000"];
+const whitelist = ["https://instagram-clone-fe.vercel.app/"];
 const corsOptions = {
   origin: (origin, callback) => {
     if (whitelist.indexOf(origin) !== -1 || !origin) {
