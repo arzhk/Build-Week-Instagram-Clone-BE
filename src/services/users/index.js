@@ -50,11 +50,16 @@ usersRouter.post("/login", async (req, res, next) => {
         const token = await authenticate(user_byUsername);
         res.cookie("token", token.token, {
           httpOnly: true,
+          path: "/",
+          secure: true,
+          sameSite: "none",
         });
         res
           .cookie("refreshToken", token.refreshToken, {
             httpOnly: true,
-            path: "/api/users/refreshToken",
+            path: "/refreshToken",
+            secure: true,
+            sameSite: "none",
           })
           .send(user_byUsername);
       } else {
